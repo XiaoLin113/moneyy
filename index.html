@@ -117,23 +117,36 @@ function uocTinhSanLuong(tongTien) {
 function formatVND(n){return Number(n).toLocaleString('vi-VN')+' ₫';}
 function removeVietnameseTones(s){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D');}
 
-function docFileExcel(e){
-  const f=e.target.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=(evt)=>{
-    const data=new Uint8Array(evt.target.result);
-    const wb=XLSX.read(data,{type:'array'});
-    duLieu=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+function docFileExcel(event) {
+  const file = event.target.files[0];
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: "array" });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    duLieu = XLSX.utils.sheet_to_json(sheet);
+
+    // Chuẩn hóa dữ liệu ngay khi load
     duLieu = duLieu.map(row => {
-      if (row.SAN_LUONG) {
-        row.TONG_NOP = tinhTienDien(Number(row.SAN_LUONG));
-      }
-      return row;
+      return {
+        MA_KHTT: String(row.MA_KHTT || "").trim().toUpperCase().replace(/(\.0)$/, ""),
+        TEN_KHTT: String(row.TEN_KHTT || "").trim(),
+        TONG_NOP: String(row.TONG_NOP || "").replace(/[^0-9]/g, "")  // chỉ giữ số
+      };
     });
-    const list=document.getElementById('danhSachKH');list.innerHTML='';
-    duLieu.forEach(row=>{const o=document.createElement('option');o.value=row.MA_KHTT;list.appendChild(o);});
+
+    // Load lại danh sách chọn
+    const dataList = document.getElementById("danhSachKH");
+    dataList.innerHTML = "";
+    duLieu.forEach(row => {
+      const option = document.createElement("option");
+      option.value = row.MA_KHTT;
+      dataList.appendChild(option);
+    });
+    alert("Đẩy dữ liệu thành công!");
+    console.log("Dữ liệu đã chuẩn hóa:", duLieu);
   };
-  r.readAsArrayBuffer(f);
+  reader.readAsArrayBuffer(file);
 }
 
 function timKiemMaKH(){
